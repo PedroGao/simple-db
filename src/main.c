@@ -10,6 +10,29 @@ typedef struct
     ssize_t input_length;
 } InputBuffer;
 
+typedef enum
+{
+    META_COMMAND_SUCCESS,
+    META_COMMAND_UNRECOGNIZED_COMMAND
+} MetaCommandResult;
+
+typedef enum
+{
+    PREPARE_SUCCESS,
+    PREPARE_UNRECOGNIZED_STATEMENT
+} PrepareResult;
+
+typedef enum
+{
+    STATEMENT_INSERT,
+    STATEMENT_SELECT
+} StatementType;
+
+typedef struct
+{
+    StatementType type;
+} Statement;
+
 InputBuffer *new_input_buffer()
 {
     // 注意，此处的 input_buffer 是在堆上分配的
@@ -51,6 +74,47 @@ void close_input_buffer(InputBuffer *input_buffer)
     free(input_buffer);
 }
 
+MetaCommandResult do_meta_command(InputBuffer *input_buffer)
+{
+    if (strcmp(input_buffer->buffer, ".exit") == 0)
+    {
+        exit(EXIT_SUCCESS);
+    }
+    else
+    {
+        return META_COMMAND_UNRECOGNIZED_COMMAND;
+    }
+}
+
+// 解析 SQL 语句，简化版，极其简化版
+PrepareResult prepare_statement(InputBuffer *input_buffer, Statement *statement)
+{
+    if (strncmp(input_buffer->buffer, "insert", 6) == 0)
+    {
+        statement->type = STATEMENT_INSERT;
+        return PREPARE_SUCCESS;
+    }
+    if (strcmp(input_buffer->buffer, "select") == 0)
+    {
+        statement->type = STATEMENT_SELECT;
+        return PREPARE_SUCCESS;
+    }
+    return PREPARE_UNRECOGNIZED_STATEMENT;
+}
+
+void execute_statement(Statement *statement)
+{
+    switch (statement->type)
+    {
+    case (STATEMENT_INSERT):
+        printf("This is where we would do an insert.\n");
+        break;
+    case (STATEMENT_SELECT):
+        printf("This is where we would do an select.\n");
+        break;
+    }
+}
+
 int main(int argc, char const *argv[])
 {
     // STDIN 缓冲区
@@ -61,17 +125,29 @@ int main(int argc, char const *argv[])
         print_prompt();
         // 读取缓冲区数据
         read_input(input_buffer);
-        // 如果输入的是  .exit 退出
-        if (strcmp(input_buffer->buffer, ".exit") == 0)
+        if (input_buffer->buffer[0] == '.')
         {
-            // 在退出程序之前记得清理数据和内存
-            close_input_buffer(input_buffer);
-            exit(EXIT_SUCCESS);
+            switch (do_meta_command(input_buffer))
+            {
+            case (META_COMMAND_SUCCESS):
+                continue;
+            case (META_COMMAND_UNRECOGNIZED_COMMAND):
+                printf("Unrecognized command '%s'\n", input_buffer->buffer);
+                continue;
+            }
         }
-        else
+        Statement statement;
+        switch (prepare_statement(input_buffer, &statement))
         {
-            printf("Unrecognized command '%s'.\n", input_buffer->buffer);
+        case (PREPARE_SUCCESS):
+            break;
+        case (PREPARE_UNRECOGNIZED_STATEMENT):
+            printf("Unrecognized keyword at start of '%s'.\n",
+                   input_buffer->buffer);
+            continue;
         }
+        execute_statement(&statement);
+        printf("Executed.\n");
     }
     return 0;
 }
