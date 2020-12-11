@@ -68,6 +68,24 @@ How Does a Database Work? 数据库是如何工作的？
 
     分裂后更新父节点
 
+## 依赖
+
+* gcc
+* ruby(单元测试需要，如果需要单测，可以不安装)
+
+### 编译
+
+``` sh
+make build
+./db
+```
+
+### 单测
+
+``` sh
+make test
+```
+
 ## 鸡汤
 
 * A journey of a thousand miles begins with a single step.
