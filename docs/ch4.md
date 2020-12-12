@@ -5,7 +5,7 @@
 在 `ubuntu` 下首先安装 `ruby` 和 `bundler` ：
 
 ``` sh
-sudo apt-get install ruby-all
+sudo apt-get install ruby-full
 sudo apt-get install bundler
 ```
 
