@@ -86,6 +86,11 @@ make build
 make test
 ```
 
+## TODO
+
+* 将`C`版重构为`C++`版，`C`版的数据结构操作看起来太难受了～
+* `Rust` 实现～
+
 ## 鸡汤
 
 * A journey of a thousand miles begins with a single step.
@@ -93,3 +98,4 @@ make test
 ## 参考资料
 
 * Let's Build a Simple Database：https://cstack.github.io/db_tutorial/
+* packed 对齐：http://blog.chinaunix.net/uid-25768133-id-3485479.html。
