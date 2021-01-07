@@ -12,6 +12,8 @@ enum MetaCommandResult {
 enum PrepareResult {
     PREPARE_SUCCESS,
     PREPARE_UNRECOGNIZED_STATEMENT,
+    PREPARE_SYNTAX_ERROR, // 语法错误
+    PREPARE_TYPE_ERROR, // 数据类型错误
 }
 
 /* 语句类型 */
@@ -21,9 +23,27 @@ enum StatementType {
     STATEMENT_NONE, // 暂无类型
 }
 
+/* 数据行 */
+struct Row {
+    id: u32,
+    username: String, // 最多 32
+    email: String, // 最多 255
+}
+
+impl Row {
+    pub fn new() -> Self {
+        Self {
+            id: 0,
+            username: String::new(),
+            email: String::new(),
+        }
+    }
+}
+
 /* 语句 */
 struct Statement {
     typ: StatementType,
+    row_to_insert: Row, 
 }
 
 impl Statement {
@@ -31,10 +51,11 @@ impl Statement {
     pub fn new() -> Self {
         Self {
             typ: StatementType::STATEMENT_NONE,
+            row_to_insert: Row::new(),
         }
     }
 
-    pub fn execute_statement(&self)  {
+    pub fn execute_statement(&self) {
         match self.typ {
             StatementType::STATEMENT_INSERT => {
                 println!("This is where we would do an insert.");
@@ -94,6 +115,19 @@ impl InputBuffer {
     pub fn prepare_statement(&self, statement: &mut Statement) -> PrepareResult {
         if self.buffer.starts_with("insert") {
             statement.typ = StatementType::STATEMENT_INSERT;
+            // 解析 buffer 中的参数
+            let parts: Vec<&str> = self.buffer().trim().split(' ').collect();
+            if parts.len() < 3 {
+                return PrepareResult::PREPARE_SYNTAX_ERROR;
+            }
+            if let Ok(id) = parts[0].parse() {
+                statement.row_to_insert.id = id;
+            } else {
+                return PrepareResult::PREPARE_TYPE_ERROR;
+            }
+            statement.row_to_insert.username = parts[1].to_string();
+            statement.row_to_insert.email = parts[2].to_string();
+            println!("This is where we would do an insert.");
             return PrepareResult::PREPARE_SUCCESS;
         }
         if self.buffer.starts_with("select") {
@@ -127,6 +161,12 @@ fn main() {
         match input_buffer.prepare_statement(&mut statement) {
             PrepareResult::PREPARE_SUCCESS => {
                 // break;
+            }
+            PrepareResult::PREPARE_SYNTAX_ERROR => {
+                println!("sql syntax err.");
+            }
+            PrepareResult::PREPARE_TYPE_ERROR => {
+                println!("Some type of data err.");
             }
             PrepareResult::PREPARE_UNRECOGNIZED_STATEMENT => {
                 println!("Unrecognized keyword at start of '{}'.", input_buffer.buffer());
